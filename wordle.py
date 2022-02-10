@@ -21,11 +21,7 @@ def next_guess(guess, word_chosen, word_list):
     """
     This function reduces the word list based on the guess and actual word.
     """
-    # word_list = ['abase', 'fease', 'sease', 'seaze', 'shade', 'swage', 'usage', 'saaae']
-    # guess = "seaze"
-    # word_chosen = "abase"  
-
-    # Turn the words into lists.
+    # Local vars
     guess_copy = list(guess)
     word_copy = list(word_chosen)
     print("Guess: ", guess_copy)
@@ -33,6 +29,7 @@ def next_guess(guess, word_chosen, word_list):
     print("\n")
 
     # Step 1: Mark exact (right letter, right spot) and inexact (right letter, wrong spot) matches.
+    # As with the real game, the first inexact match is marked if there is more than one inexact match.
 
     for i, letter in enumerate(guess):
         if letter == word_chosen[i]: 
@@ -52,7 +49,7 @@ def next_guess(guess, word_chosen, word_list):
     print("\n")
 
     # Step 2: Filter words by exact letter placements. Create a parallel filtered words list
-    # that has matched letters removed in prep for the last step.
+    # that has matched letters removed in prep for the last step. Matched letters contain "-".
 
     chosen_words = list(word_list)
     chosen_wordsfilt = list(word_list) 
@@ -85,11 +82,12 @@ def next_guess(guess, word_chosen, word_list):
     print("\n")
 
     # Step 3: Filter by words that contain the remaining matched letters. We've already filtered out the exact 
-    # letter matches in the previous step.
+    # letter matches in the previous step, so this will find words whose remaining unmatched letters fully
+    # contain the inexact matched guess letters.
 
     if "1" in guess_copy:
 
-        # We're going to build the list by adding words that have all non-exact matches.
+        # We're going to rebuild the word guess list by adding words that have all inexact matches.
         new_words = list()
         new_wordsfilt = list()
 
@@ -98,8 +96,7 @@ def next_guess(guess, word_chosen, word_list):
         for i, letter in enumerate(guess_copy):
             if letter == '1':
                 letters.append(guess[i])
-
-        print("letters marked with 1", letters)
+        print("Inexact letters", letters)
 
         # Now we need to go through every filtered word from the previous steps and pick the matches
         for i, word in enumerate(chosen_wordsfilt):
@@ -109,8 +106,8 @@ def next_guess(guess, word_chosen, word_list):
                 new_words.append(chosen_words[i])
                 new_wordsfilt.append(chosen_wordsfilt[i])
 
-                # Mark off the exact 
-
+        # Now we have a new word list. We still need the filtered word list to remove unique non-matching 
+        # letters
         chosen_words = new_words
         chosen_wordsfilt = new_wordsfilt
 
@@ -123,7 +120,7 @@ def next_guess(guess, word_chosen, word_list):
     # Step 4: Remove words containing unique letters that did not match anything. If the letters are inexact 
     # matches, leave those words in the list, since we don't know which position those inexact matches are.
 
-    # We're going to remove words from the list, so make a copy
+    # Again, we're going to use a copy to modify.
     final_chosen_words = list(chosen_words)
 
     # Get a list of the inexact letter matches
@@ -139,7 +136,7 @@ def next_guess(guess, word_chosen, word_list):
             unique_letters.append(letter)
     print("Unique non-matching letters", unique_letters)
 
-    # Go through the filtered list and only pull out the words with unique non-matching letters. 
+    # Go through the filtered word list and only pull out the words with unique non-matching letters. 
     for i, word in enumerate(chosen_wordsfilt):
         for letter in unique_letters:
             if letter in word:
@@ -153,25 +150,10 @@ def next_guess(guess, word_chosen, word_list):
 
     return final_chosen_words
 
-# This is a link to the wordl allowed guesses and answers (alphabatized)
-# https://www.reddit.com/r/wordle/comments/s4tcw8/a_note_on_wordles_word_list/
-# https://gist.github.com/cfreshman/cdcdf777450c5b5301e439061d29694c
-# https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b 
-
-# The purpose of this was to see if there are better starting guesses for solving worlde quickly. What this does
-# currently is to iterate based on a starting guess and the known answer. 
-#
-# To adapt this for an analysis of all solutions:
-#   1. Pick a starting word like "irate" or do an histogram on the dictionary to find other good starting words.
-#   2. Btree on each wordle solution. 
-#       Start with a single solution
-#       Run every possible second guess after "irate"
-#       Record the words that produce the fewest words for the next step
-#       Run those words through to see how many more steps it takes to solve
-#   3. Repeat for each wordle solution.
-#   4. Process the list to see if there are a subset of words that get you to a solution faster
-
 def iterate_until_solved(guess, word_chosen, word_list):
+    """
+    This iterates starting with the seed word and choosing randomly until the word is found.
+    """
     # Keep track so we don't repeat guesses on each pass
     guess_list = list()
     guess_list.append(guess)
@@ -198,13 +180,29 @@ def iterate_until_solved(guess, word_chosen, word_list):
 
     return passcount
 
+# This is a link to the wordl allowed guesses and answers (alphabatized)
+# https://www.reddit.com/r/wordle/comments/s4tcw8/a_note_on_wordles_word_list/
+# https://gist.github.com/cfreshman/cdcdf777450c5b5301e439061d29694c
+# https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b 
+
+# The purpose of this was to see if there are better starting guesses for solving worlde quickly. What this does
+# currently is to iterate based on a starting guess and the known answer. 
+#
+# To adapt this for an analysis of all solutions:
+#   (DONE) 1. Pick a starting word like "irate" or do an histogram on the dictionary to find other good starting words.
+#   2. Btree on each wordle solution. 
+#       Start with a single solution
+#       Run every possible second guess after seed word
+#       Record the words that produce the fewest words for the next step
+#       Run those words through to see how many more steps it takes to solve
+#   3. Repeat for each wordle solution.
+#   4. Process the list to see if there are a subset of words that get you to a solution faster
+
 def main():
     """
-    Main Code
+    This contains a variety of code blocks that do different things with the word list. 
+    Uncomment the desired block to test things out.
     """
-
-    print("\n\n---------------- Wordle Analyzer ----------------\n\n")
-
     # Dictionary of guesses. The worlde list does not contain the answers, just the guesses. This strips \n.
     # wordBank = "/usr/share/dict/words"
     word_bank_file = "wordle-allowed-guesses.txt"
@@ -220,46 +218,64 @@ def main():
     word_list = word_guess_list + word_answer_list
     word_list.sort()
 
-    # Histogram of letters from the answer list
-    # ORATE is the highest frequency of letters 
+    print("\n\n---------------- Wordle Analyzer ----------------\n\n")
+
+    # ------------------------------------------------------------------------------------------------
+    # Histogram of letters from the answer list. ORATE has the higest frequency of letters
+    # ------------------------------------------------------------------------------------------------
     # print("Histogram of letters in answer key")
     # histogram = count_letters(word_answer_list)
     # histogram = dict(sorted(histogram.items(), key=lambda item: item[1], reverse=True))
     # print(histogram)
     # print("\n")
 
+    # ------------------------------------------------------------------------------------------------
     # Algorithm test words
-    # # No overlap
+    # ------------------------------------------------------------------------------------------------
+    # # No letter overlap
     # guess = "orate"
     # word_chosen = "biddy"
-    # # Exact matches only
+    # # Exact letter matches only
     # guess = "brand"
     # word_chosen = "frank"
-    # # Inexact matches only
+    # # Inexact letter matches only
     # guess = "orate"
     # word_chosen = "tides"
-    # # All cases
+    # # All types of matches
     # guess = "orate"
     # word_chosen = "trade"
     # next_guess(guess, word_chosen, word_list)
 
-    # next_guess("test", "test", word_list)
-
-    # Single solve
+    # ------------------------------------------------------------------------------------------------
+    # Single pass through the solver
+    # ------------------------------------------------------------------------------------------------
     # guess = "orate"
     # word_chosen = "trade"
-    # guess = "caeca"
-    # word_chosen = "abbey"
     # numguesses = iterate_until_solved(guess, word_chosen, word_list)
     # print("Guesses to solve: ", numguesses)
 
+    # ------------------------------------------------------------------------------------------------
     # Test seed word against entire list
+    # ------------------------------------------------------------------------------------------------
+    # guess = "orate"
+    # numguesses = list()
+    # for answerword in word_answer_list:
+    #     num = iterate_until_solved(guess, answerword, word_list)
+    #     numguesses.append(num)
+    # print(numguesses)
+
+    # ------------------------------------------------------------------------------------------------
+    # Test seed word against a sample of the entire list
+    # ------------------------------------------------------------------------------------------------
+    shorter_word_list = random.sample(word_guess_list, 2000)
+    new_word_list = shorter_word_list + word_answer_list
     guess = "orate"
     numguesses = list()
     for answerword in word_answer_list:
-        num = iterate_until_solved(guess, answerword, word_list)
+        num = iterate_until_solved(guess, answerword, new_word_list)
         numguesses.append(num)
     print(numguesses)
+
 
 if __name__ == "__main__":
     main()
