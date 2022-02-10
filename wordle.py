@@ -1,104 +1,157 @@
+from hashlib import new
 import random
+from collections import OrderedDict
+import string
 
 def by_size(words, size):
     return [word for word in words if len(word) == size]
 
-def next_guess(guess, wordChosen, wordList):
+def count_letters(word_list):
+
+    histogram = OrderedDict((c,0) for c in string.ascii_lowercase)
+
+    for word in word_list:
+        for c in word:
+            if c in string.ascii_letters:
+                histogram[c.lower()] += 1
+
+    return histogram
+
+def next_guess(guess, word_chosen, word_list):
     """
     This function reduces the word list based on the guess and actual word.
     """
+    # word_list = ['abase', 'fease', 'sease', 'seaze', 'shade', 'swage', 'usage', 'saaae']
+    # guess = "seaze"
+    # word_chosen = "abase"  
 
-    # The guess and answer are marked up as we search. Make copies.
-    guessCopy = list(guess)
-    wordCopy = list(wordChosen)
-    print("Guess and answer word:")
-    print(guessCopy)
-    print(wordCopy)
+    # Turn the words into lists.
+    guess_copy = list(guess)
+    word_copy = list(word_chosen)
+    print("Guess: ", guess_copy)
+    print("Answer:", word_copy)
     print("\n")
 
-    # Mark the correct guesses. "2" for exact match, "1" for an inexact match (right letter, wrong spot).
-    # The exact matches are removed first. Then additional matches are marked sequentially.
+    # Step 1: Mark exact (right letter, right spot) and inexact (right letter, wrong spot) matches.
 
     for i, letter in enumerate(guess):
-        if (letter == wordChosen[i]): 
-            wordCopy[i] = ""
-            guessCopy[i] = "2"
-    print("Exact matches marked with 2:")
-    print(guessCopy)
-    print(wordCopy)
+        if letter == word_chosen[i]: 
+            word_copy[i] = " "
+            guess_copy[i] = "2"
+
+    for i, letter in enumerate(guess_copy):
+        if guess_copy[i] in word_copy:
+            index = word_copy.index(guess_copy[i])
+            word_copy[index] = " "
+            guess_copy[i] = "1" 
+
+    print("Exact matches mnarked with '2'. Inexact matches marked with '1'")
+    print("Guess: ", guess_copy)
+    print("Guess: ", guess)
+    print("Answer:", word_copy)
     print("\n")
 
-    for i, letter in enumerate(guessCopy):
-        if (guessCopy[i] in wordCopy):
-            index = wordCopy.index(guessCopy[i])
-            wordCopy[index] = ""
-            guessCopy[i] = "1" 
-    print("Inexact matches marked with 1:")
-    print(guessCopy)
-    print(wordCopy)
-    print("\n")
+    # Step 2: Filter words by exact letter placements. Create a parallel filtered words list
+    # that has matched letters removed in prep for the last step.
 
-    # First filter acceptable words by exact letter placements
+    chosen_words = list(word_list)
+    chosen_wordsfilt = list(word_list) 
 
-    chosenWords = wordList      # Word list we're going to subset based on matches
-    chosenWordsFilt = wordList  # Same word list, but we're going to remove matched letters to prevent dupe matches
-
-    while "2" in guessCopy:
-        index = guessCopy.index("2")
+    while "2" in guess_copy:
+        index = guess_copy.index("2")
         letter = guess[index]
 
-        newChosenWords = [word for word in chosenWords if word[index] == letter]
-        newChosenWordsFilt = [word for word in chosenWordsFilt if word[index] == letter]
+        # Create a new word list of words that only match this letter in this position
+        new_chosen_words = [word for word in chosen_words if word[index] == letter]
+        new_chosen_wordsfilt = [word for word in chosen_wordsfilt if word[index] == letter]
 
-        for i, word in enumerate(newChosenWordsFilt):
-            newChosenWordsFilt[i] = word[0:index] + "-" + word[index+1:len(word)]
+        # Now cross out the matched letter in the filtered list
+        for i, word in enumerate(new_chosen_wordsfilt):
+            new_chosen_wordsfilt[i] = word[0:index] + "-" + word[index+1:len(word)]
 
-        chosenWords = newChosenWords
-        chosenWordsFilt = newChosenWordsFilt
-        guessCopy[index] = "-"
+        # Prep for the next iteration of the loop and remove this matching letter from the guess
+        chosen_words = new_chosen_words
+        chosen_wordsfilt = new_chosen_wordsfilt
+        guess_copy[index] = "-"
 
-        print("Exact matches pass:")
-        print(len(chosenWords))
-        print(guessCopy)
+        # print("Exact matches pass:")
+        # print(len(chosen_words))
+        # print(guess_copy)
 
     print("\n Filtered word list after exact letter matches.")
-    thewords = list(zip(chosenWords,chosenWordsFilt))
-    print(thewords)
-    print(len(thewords))
+    the_words = list(zip(chosen_words, chosen_wordsfilt))
+    # print(the_words)
+    print(len(the_words))
     print("\n")
 
-    # Then filter by words that contain the remaining matched letters. We've already filtered exact letter matches, so
-    # if we find a matching letter that's in the exact location, it's not a viable word.
+    # Step 3: Filter by words that contain the remaining matched letters. We've already filtered out the exact 
+    # letter matches in the previous step.
 
-    newwords = list()
-    newwordsfilt = list()
-    while "1" in guessCopy:
-        index = guessCopy.index("1")
-        letter = guess[index]
+    if "1" in guess_copy:
 
-        for i, word in enumerate(newChosenWordsFilt):
-            if letter in word:
-                j = word.index(letter)
+        # We're going to build the list by adding words that have all non-exact matches.
+        new_words = list()
+        new_wordsfilt = list()
 
-                if j != index:
-                    newwords.append(newChosenWords[i])
-                    newwordsfilt.append(word[0:j] + "-" + word[j+1:len(word)])
-        
-        chosenWords = newwords
-        chosenWordsFilt = newwordsfilt
-        guessCopy[index] = "-"
+        # Make a list of the letters that must be present for the word to be a good guess.
+        letters = list()
+        for i, letter in enumerate(guess_copy):
+            if letter == '1':
+                letters.append(guess[i])
 
-        print("Inexact matches pass:")
-        print(len(chosenWordsFilt))
-        print(guessCopy)
+        print("letters marked with 1", letters)
+
+        # Now we need to go through every filtered word from the previous steps and pick the matches
+        for i, word in enumerate(chosen_wordsfilt):
+            temp_word = list(word)
+
+            if all(item in temp_word for item in letters):
+                new_words.append(chosen_words[i])
+                new_wordsfilt.append(chosen_wordsfilt[i])
+
+                # Mark off the exact 
+
+        chosen_words = new_words
+        chosen_wordsfilt = new_wordsfilt
 
     print("\n Filtered word list after inexact letter matches.")
-    thewords = list(zip(chosenWords,chosenWordsFilt))
-    print(thewords)
-    print(len(thewords))
+    the_words = list(zip(chosen_words, chosen_wordsfilt))
+    # print(the_words)
+    print(len(the_words))
     print("\n")
 
-    return chosenWords, chosenWordsFilt
+    # Step 4: Remove words containing unique letters that did not match anything. If the letters are inexact 
+    # matches, leave those words in the list, since we don't know which position those inexact matches are.
+
+    # We're going to remove words from the list, so make a copy
+    final_chosen_words = list(chosen_words)
+
+    # Get a list of the inexact letter matches
+    inexact_letters = list()
+    for i, letter in enumerate(guess_copy):
+        if letter == "1":
+            inexact_letters.append(guess[i])
+
+    # Now build a list of unique letters that are not inexact matches
+    unique_letters = list()
+    for letter in guess_copy:
+        if letter != "1" and letter != "2" and letter != '-' and letter not in inexact_letters:
+            unique_letters.append(letter)
+    print("Unique non-matching letters", unique_letters)
+
+    # Go through the filtered list and only pull out the words with unique non-matching letters. 
+    for i, word in enumerate(chosen_wordsfilt):
+        for letter in unique_letters:
+            if letter in word:
+                final_chosen_words.remove(chosen_words[i])
+                break
+
+    print("\n Filtered word list after bad letter guesses.")
+    # print(final_chosen_words)
+    print(len(final_chosen_words))
+    print("\n")
+
+    return final_chosen_words
 
 # This is a link to the wordl allowed guesses and answers (alphabatized)
 # https://www.reddit.com/r/wordle/comments/s4tcw8/a_note_on_wordles_word_list/
@@ -118,54 +171,95 @@ def next_guess(guess, wordChosen, wordList):
 #   3. Repeat for each wordle solution.
 #   4. Process the list to see if there are a subset of words that get you to a solution faster
 
+def iterate_until_solved(guess, word_chosen, word_list):
+    # Keep track so we don't repeat guesses on each pass
+    guess_list = list()
+    guess_list.append(guess)
+
+    # Loop through and reduce the word list until we get the answer
+    passcount = 1
+    while guess != word_chosen:
+        # Make our first simplification
+        print("PASS #",passcount)
+        print("\n")
+        chosen_words = next_guess(guess, word_chosen, word_list)
+
+        # New subset of words
+        word_list = chosen_words
+        # Make a random new guess and make sure we didn't guess it already
+        guess = random.choice(word_list)
+        while guess in guess_list:
+            guess = random.choice(word_list)
+        
+        # Loop back around to try the next guess
+        guess_list.append(guess)
+        print("Next guess:",guess)
+        passcount += 1
+
+    return passcount
 
 def main():
     """
     Main Code
     """
 
+    print("\n\n---------------- Wordle Analyzer ----------------\n\n")
+
     # Dictionary of guesses. The worlde list does not contain the answers, just the guesses. This strips \n.
     # wordBank = "/usr/share/dict/words"
-    wordBank = "wordle-allowed-guesses.txt"
-    with open(wordBank) as f:
-        wordGuessList = f.read().splitlines() 
+    word_bank_file = "wordle-allowed-guesses.txt"
+    with open(word_bank_file) as f:
+        word_guess_list = f.read().splitlines() 
 
     # List of all answers
-    wordAnswersBank = "wordle-answers-alphabetical.txt"
-    with open(wordAnswersBank) as f:
-        wordAnswerList = f.read().splitlines() 
+    word_answers_bank_file = "wordle-answers-alphabetical.txt"
+    with open(word_answers_bank_file) as f:
+        word_answer_list = f.read().splitlines() 
 
     # Master word list, includes answers and guesses
-    wordList = wordGuessList + wordAnswerList
-    wordList.sort()
+    word_list = word_guess_list + word_answer_list
+    word_list.sort()
 
-    # Choose first guess and indicate answer word
-    guess = "prank"
-    wordChosen = "frame"
+    # Histogram of letters from the answer list
+    # ORATE is the highest frequency of letters 
+    # print("Histogram of letters in answer key")
+    # histogram = count_letters(word_answer_list)
+    # histogram = dict(sorted(histogram.items(), key=lambda item: item[1], reverse=True))
+    # print(histogram)
+    # print("\n")
 
-    # Keep track so we don't repeat guesses on each pass
-    guessList = list()
-    guessList.append(guess)
+    # Algorithm test words
+    # # No overlap
+    # guess = "orate"
+    # word_chosen = "biddy"
+    # # Exact matches only
+    # guess = "brand"
+    # word_chosen = "frank"
+    # # Inexact matches only
+    # guess = "orate"
+    # word_chosen = "tides"
+    # # All cases
+    # guess = "orate"
+    # word_chosen = "trade"
+    # next_guess(guess, word_chosen, word_list)
 
-    # Loop through and reduce the word list until we get the answer
-    passcount = 1
-    while guess != wordChosen:
-        # Make our first simplification
-        print("PASS #",passcount)
-        chosenWords, chosenWordsFilt =  next_guess(guess, wordChosen, wordList)
+    # next_guess("test", "test", word_list)
 
-        # New subset of words
-        wordList = chosenWords
+    # Single solve
+    # guess = "orate"
+    # word_chosen = "trade"
+    # guess = "caeca"
+    # word_chosen = "abbey"
+    # numguesses = iterate_until_solved(guess, word_chosen, word_list)
+    # print("Guesses to solve: ", numguesses)
 
-        # Make a random new guess and make sure we didn't guess it already
-        guess = random.choice(wordList)
-        while guess in guessList:
-            guess = random.choice(wordList)
-        
-        # Loop back around to try the next guess
-        guessList.append(guess)
-        print("Guess:",guess)
-        passcount += 1
+    # Test seed word against entire list
+    guess = "orate"
+    numguesses = list()
+    for answerword in word_answer_list:
+        num = iterate_until_solved(guess, answerword, word_list)
+        numguesses.append(num)
+    print(numguesses)
 
 if __name__ == "__main__":
     main()
@@ -174,17 +268,17 @@ if __name__ == "__main__":
 # Misc code I didn't use, but don't want to forget
 
 # This brings in \n line endings
-# wordGuessList = open(wordBank).readlines()
+# word_guess_list = open(wordBank).readlines()
 
 # One way to get 5 letter words from entire dictionary
-# fiveletterwords = by_size(wordGuessList, 5)
+# fiveletterwords = by_size(word_guess_list, 5)
 # print(fiveletterwords)
 # print(len(fiveletterwords))
 
 # Another way to pick a radmon 5 letter word
 # Pick a random 5-letter word
 # while True:
-#     wordChosen = random.choice(wordGuessList)
-#     if len(wordChosen) == 5: 
+#     word_chosen = random.choice(word_guess_list)
+#     if len(word_chosen) == 5: 
 #         break
-# print (wordChosen)
+# print (word_chosen)
