@@ -2,8 +2,11 @@ from hashlib import new
 import random
 from collections import OrderedDict
 import string
+from textwrap import wrap
+from this import d
 import matplotlib.pyplot as plt
 import numpy as np
+import statistics
 
 def by_size(words, size):
     return [word for word in words if len(word) == size]
@@ -19,19 +22,28 @@ def count_letters(word_list):
 
     return histogram
 
+# Global for next_guess function
+verbose_print = True
+# verbose_print = False
+
 def next_guess(guess, word_chosen, word_list):
     """
     This function reduces the word list based on the guess and actual word.
+
+    Definitions
+    exact match = green square = right letter, right spot
+    inexact match = yellow square = right letter, wrong spot
+    unmatched = black square and not a green or yellow square
+    overmatched = black square but letter already marked in other green or yellow squares
     """
     # Local vars
     guess_copy = list(guess)
     word_copy = list(word_chosen)
-    print("Guess: ", guess_copy)
-    print("Answer:", word_copy)
-    print("\n")
 
-    # Step 1: Mark exact (right letter, right spot) and inexact (right letter, wrong spot) matches.
-    # As with the real game, the first inexact match is marked if there is more than one inexact match.
+    # Step 1: Mark up the word with matches.
+
+    # Mark green with "2" and the yellow squares with "1". As with the real game, the first yellow 
+    # match is marked if there is more than one instance of that letter. 
 
     for i, letter in enumerate(guess):
         if letter == word_chosen[i]: 
@@ -44,21 +56,41 @@ def next_guess(guess, word_chosen, word_list):
             word_copy[index] = " "
             guess_copy[i] = "1" 
 
-    print("Exact matches mnarked with '2'. Inexact matches marked with '1'")
-    print("Guess: ", guess_copy)
-    print("Guess: ", guess)
-    print("Answer:", word_copy)
-    print("\n")
+    # Build a dictionary of unmatched letters and overmatched letters, e.g. { "e": 1, "j": 2 }
+    # Letters with a count of 1 are unmatched. Letters with a count > 1 are overmatched. See Step 4.
 
-    # Step 2: Filter words by exact letter placements. Create a parallel filtered words list
-    # that has matched letters removed in prep for the last step. Matched letters contain "-".
+    tempguess = list(guess)
+    word_delete_list = {}
+
+    for i, letter in enumerate(guess_copy):
+        if letter != "1" and letter != "2" and letter not in word_delete_list.keys():
+            word_delete_list[letter] = 1
+
+    for i, letter in enumerate(guess_copy):
+        if letter == "1" and tempguess[i] in word_delete_list.keys():
+            word_delete_list[tempguess[i]] += 1
+
+    # Debug info for this step.
+
+    print("Exact matches marked with '2'. Inexact matches marked with '1'")
+    print("Guess: ", list(guess))
+    print("Guess: ", guess_copy)
+    print("Answer:", list(word_chosen))
+    print("Answer:", word_copy)
+    print("Delete counts:", word_delete_list)
+    print("\nCount of initial word list:", len(word_list))
+
+    # Step 2: Filter words by green letter placements. Create a parallel filtered words list
+    # that has green letters removed in prep for Step 3. Green letters replaced with "-".
 
     chosen_words = list(word_list)
     chosen_wordsfilt = list(word_list) 
 
+    exact_matches = False
     while "2" in guess_copy:
         index = guess_copy.index("2")
         letter = guess[index]
+        exact_matches = True
 
         # Create a new word list of words that only match this letter in this position
         new_chosen_words = [word for word in chosen_words if word[index] == letter]
@@ -73,19 +105,17 @@ def next_guess(guess, word_chosen, word_list):
         chosen_wordsfilt = new_chosen_wordsfilt
         guess_copy[index] = "-"
 
-        # print("Exact matches pass:")
-        # print(len(chosen_words))
+        # print("Exact matches pass:",len(chosen_words))
         # print(guess_copy)
 
-    print("\n Filtered word list after exact letter matches.")
-    the_words = list(zip(chosen_words, chosen_wordsfilt))
-    # print(the_words)
-    print(len(the_words))
-    print("\n")
+    if verbose_print and exact_matches:
+        the_words = list(zip(chosen_words, chosen_wordsfilt))
+        print("\nCount of filtered word list after exact letter matches:",len(the_words))
+        # print(the_words)
 
-    # Step 3: Filter by words that contain the remaining matched letters. We've already filtered out the exact 
-    # letter matches in the previous step, so this will find words whose remaining unmatched letters fully
-    # contain the inexact matched guess letters.
+    # Step 3: Filter by words for yellow letters. We've already filtered out and removed the green letter
+    # matches, so if there's a repeat letter that was both green and yellow, this step will keep that
+    # word in the list. 
 
     if "1" in guess_copy:
 
@@ -98,7 +128,7 @@ def next_guess(guess, word_chosen, word_list):
         for i, letter in enumerate(guess_copy):
             if letter == '1':
                 letters.append(guess[i])
-        print("Inexact letters", letters)
+        # print("Inexact letters", letters)
 
         # Now we need to go through every filtered word from the previous steps and pick the matches
         for i, word in enumerate(chosen_wordsfilt):
@@ -108,64 +138,72 @@ def next_guess(guess, word_chosen, word_list):
                 new_words.append(chosen_words[i])
                 new_wordsfilt.append(chosen_wordsfilt[i])
 
-        # Now we have a new word list. We still need the filtered word list to remove unique non-matching 
-        # letters
+        # New word list
         chosen_words = new_words
         chosen_wordsfilt = new_wordsfilt
 
-    print("\n Filtered word list after inexact letter matches.")
-    the_words = list(zip(chosen_words, chosen_wordsfilt))
-    # print(the_words)
-    print(len(the_words))
-    print("\n")
+    if verbose_print and inexact_matches:
+        the_words = list(zip(chosen_words, chosen_wordsfilt))
+        print("\nCount of filtered word list after inexact letter matches:",len(the_words))
+        # print(the_words)
 
-    # Step 4: Remove words containing unique letters that did not match anything. If the letters are inexact 
-    # matches, leave those words in the list, since we don't know which position those inexact matches are.
+    # Step 4: Remove words containing unmatched and overmatched letters. Again we're using the filtered list for
+    # this, which has green letters removed. In Step 1, we built a dictionary of unmatched letters (count = 1) and
+    # overmatched letters (count = yelow letters + black letters that are the same). 
+    # 
+    # For example, let's say my guess has 1 "z" and 2 "e" in it. The "z" is a black square. One "e" is marked yellow,
+    # and the other "e" is marked black. This means that any dictionary word with a "z" has to be removed, and any 
+    # dictionary word with two or more "e" has to be removed. In this case, my removal dictionary looks like:
+    # word_delete_list = { "z" : 1, "e" : 2 }
 
-    # Again, we're going to use a copy to modify.
+    # Again, we're going to use a copy to modify the word lists.
     final_chosen_words = list(chosen_words)
-
-    # Get a list of the inexact letter matches
-    inexact_letters = list()
-    for i, letter in enumerate(guess_copy):
-        if letter == "1":
-            inexact_letters.append(guess[i])
-
-    # Now build a list of unique letters that are not inexact matches
-    unique_letters = list()
-    for letter in guess_copy:
-        if letter != "1" and letter != "2" and letter != '-' and letter not in inexact_letters:
-            unique_letters.append(letter)
-    print("Unique non-matching letters", unique_letters)
+    final_chosen_wordsfilt = list(chosen_wordsfilt)
 
     # Go through the filtered word list and only pull out the words with unique non-matching letters. 
     for i, word in enumerate(chosen_wordsfilt):
-        for letter in unique_letters:
-            if letter in word:
+        for key in word_delete_list:
+            if word.count(key) >= word_delete_list[key]:
                 final_chosen_words.remove(chosen_words[i])
+                final_chosen_wordsfilt.remove(chosen_wordsfilt[i])
                 break
 
-    print("\n Filtered word list after bad letter guesses.")
-    # print(final_chosen_words)
-    print(len(final_chosen_words))
-    print("\n")
+    if verbose_print:
+        the_words = list(zip(final_chosen_words, final_chosen_wordsfilt))
+        print("\nCount of filter word list after non-matching letters and too many inexact matching letters:",len(the_words))
+        # print(the_words)
+
+    if verbose_print:
+       removed_words = np.setdiff1d(word_list, final_chosen_words).tolist()
+       print("\nTotal words removed in this step:", len(removed_words))
+       print(removed_words)
 
     return final_chosen_words
 
 def iterate_until_solved(guess, word_chosen, word_list):
     """
     This iterates starting with the seed word and choosing randomly until the word is found.
+    It returns a count of the words at each step.
     """
     # Keep track so we don't repeat guesses on each pass
     guess_list = list()
+    word_count_per_step = list()
     guess_list.append(guess)
 
+    # Initialize the random number generator. This just ensures we get the same randomness each time we
+    # run the algorithm, which helps check for mistakes.
+    random.seed(100)
+
+    # The first wordcount is the entire list
+    word_count_per_step.append(len(word_list))
+
     # Loop through and reduce the word list until we get the answer
+    print("----------------------------------------------")
     passcount = 1
     while guess != word_chosen:
         # Make our first simplification
         print("PASS #",passcount)
-        print("\n")
+        # print("\n")
         chosen_words = next_guess(guess, word_chosen, word_list)
 
         # New subset of words
@@ -177,28 +215,84 @@ def iterate_until_solved(guess, word_chosen, word_list):
         
         # Loop back around to try the next guess
         guess_list.append(guess)
+        word_count_per_step.append(len(word_list))
         print("Next guess:",guess)
         passcount += 1
 
-    return passcount
+    return word_count_per_step
 
 # This is a link to the wordl allowed guesses and answers (alphabatized)
 # https://www.reddit.com/r/wordle/comments/s4tcw8/a_note_on_wordles_word_list/
 # https://gist.github.com/cfreshman/cdcdf777450c5b5301e439061d29694c
 # https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b 
 
-# The purpose of this was to see if there are better starting guesses for solving worlde quickly. What this does
-# currently is to iterate based on a starting guess and the known answer. 
-#
-# To adapt this for an analysis of all solutions:
-#   (DONE) 1. Pick a starting word like "irate" or do an histogram on the dictionary to find other good starting words.
-#   2. Btree on each wordle solution. 
-#       Start with a single solution
-#       Run every possible second guess after seed word
-#       Record the words that produce the fewest words for the next step
-#       Run those words through to see how many more steps it takes to solve
-#   3. Repeat for each wordle solution.
-#   4. Process the list to see if there are a subset of words that get you to a solution faster
+def plot_words_per_step(words_per_step):
+    """
+    Plots min, max, mean curves for each step
+    """
+
+    # words_per_step is a list with rows of different lengths. We need to make the rows the same length
+    # in order to subset a numpy array.
+    row_lengths = []
+    for row in words_per_step:
+        row_lengths.append(len(row))
+    max_length = max(row_lengths)
+
+    for row in words_per_step:
+        while (len(row) < max_length):
+            row.append(0)
+
+    words_per_step_array = np.array(words_per_step)
+
+    # Init the plot lines
+    means = [0] * max_length
+    mins = [0] * max_length
+    maxes = [0] * max_length
+    x = list(range(1, max_length+1))
+
+    # Calculate the stats on guesses at each step
+    for i in range(0, len(means)):
+        mins[i] = min(words_per_step_array[:,i])
+        maxes[i] = max(words_per_step_array[:,i])
+        means[i] = statistics.mean(words_per_step_array[:,i])
+
+    # Print the values
+    print(x)
+    print("Mins: ", mins)
+    print("Maxes:", maxes)
+    print("Means:", means)
+
+    # Plot the three curves. Skip the first step because it's the entire dictionary
+    plt.plot(x[1:], mins[1:], label = "min")
+    plt.plot(x[1:], maxes[1:], label = "max")
+    plt.plot(x[1:], means[1:], label = "mean")
+    plt.legend()
+    plt.title("Words in dictionary at each guess")
+    plt.xlabel("Step")
+    plt.ylabel("Word Count")
+    plt.show()
+
+def plot_numguess(numguesses):
+    """
+    Plots histogram of guesses
+    """
+
+    print("Number of guesses per word:",numguesses)
+
+    bins=list(range(1,max(numguesses)+1))
+    ticks = list(range(1,max(numguesses)))
+
+    histogram = np.histogram(numguesses, bins=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    histogram = np.histogram(numguesses, bins)
+    print(histogram)
+
+    plt.bar(histogram[1][0:max(numguesses)-1], histogram[0], width=0.5, color='g')
+    plt.title("Histogram of number of steps to solve each word")
+    plt.xticks(ticks)
+    plt.xlabel("Steps")
+    plt.ylabel("Count")
+    plt.show()
+
 
 def main():
     """
@@ -262,40 +356,55 @@ def main():
     # guess = "orate"
     # word_chosen = "tides"
     # # All types of matches
-    # guess = "orate"
-    # word_chosen = "trade"
+    guess = "orate"
+    word_chosen = "trade"
+    next_guess(guess, word_chosen, word_list)
+    # # Too many inexact matching letters
+    # guess = "ezzze"
+    # word_chosen = "hoped"
     # next_guess(guess, word_chosen, word_list)
 
     # ------------------------------------------------------------------------------------------------
     # Single pass through the solver
     # ------------------------------------------------------------------------------------------------
     # guess = "orate"
-    # word_chosen = "trade"
+    # word_chosen = "hoped"
     # numguesses = iterate_until_solved(guess, word_chosen, word_list)
     # print("Guesses to solve: ", numguesses)
 
     # ------------------------------------------------------------------------------------------------
-    # Test seed word against entire list
+    # Test seed word against entire list. Count number of guessed per word and also number
+    # of words at the end of each guess step.
     # ------------------------------------------------------------------------------------------------
+
     # guess = "orate"
     # numguesses = list()
+    # words_per_step = list()
+
     # for answerword in word_answer_list:
-    #     num = iterate_until_solved(guess, answerword, word_list)
-    #     numguesses.append(num)
-    # print(numguesses)
+    #     word_count_per_step = iterate_until_solved(guess, answerword, word_list)
+    #     words_per_step.append(word_count_per_step)
+    #     numguesses.append(len(word_count_per_step))
+
+    # plot_words_per_step(words_per_step)
+    # plot_numguess(numguesses)
 
     # ------------------------------------------------------------------------------------------------
     # Test seed word against a sample of the entire list
     # ------------------------------------------------------------------------------------------------
-    shorter_word_list = random.sample(word_guess_list, 2000)
-    new_word_list = shorter_word_list + word_answer_list
-    guess = "orate"
-    numguesses = list()
-    for answerword in word_answer_list:
-        num = iterate_until_solved(guess, answerword, new_word_list)
-        numguesses.append(num)
-    print(numguesses)
+    # shorter_word_list = random.sample(word_guess_list, 2000)
+    # new_word_list = shorter_word_list + word_answer_list
+    # guess = "orate"
+    # numguesses = list()
+    # words_per_step = list()
 
+    # for answerword in word_answer_list:
+    #     word_count_per_step = iterate_until_solved(guess, answerword, new_word_list)
+    #     words_per_step.append(word_count_per_step)
+    #     numguesses.append(len(word_count_per_step))
+
+    # plot_words_per_step(words_per_step)
+    # plot_numguess(numguesses)
 
 if __name__ == "__main__":
     main()
@@ -331,3 +440,6 @@ if __name__ == "__main__":
 # # Set a clean upper y-axis limit.
 # plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
 # plt.show()
+#
+# How to manually initialize a 2D array
+#    words_per_step = [[0 for x in range(20)] for y in range(len(word_answer_list))]
