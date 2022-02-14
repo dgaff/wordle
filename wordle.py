@@ -117,7 +117,9 @@ def next_guess(guess, word_chosen, word_list):
     # matches, so if there's a repeat letter that was both green and yellow, this step will keep that
     # word in the list. 
 
+    inexact_matches = False
     if "1" in guess_copy:
+        inexact_matches = True
 
         # We're going to rebuild the word guess list by adding words that have all inexact matches.
         new_words = list()
@@ -317,8 +319,9 @@ def main():
     print("\n\n---------------- Wordle Analyzer ----------------\n\n")
 
     # ------------------------------------------------------------------------------------------------
-    # Histogram of letters from the answer list. ORATE has the higest frequency of letters
+    # Histogram of letters from the total word list. 
     # ------------------------------------------------------------------------------------------------
+    
     # print("Histogram of letters in full word list")
     # histogram = count_letters(word_list)
     # histogram = dict(sorted(histogram.items(), key=lambda item: item[1], reverse=True))
@@ -331,8 +334,9 @@ def main():
     # plt.show()
 
     # ------------------------------------------------------------------------------------------------
-    # Histogram of letters from the answer list. ORATE has the higest frequency of letters
+    # Histogram of letters from the answer list. 
     # ------------------------------------------------------------------------------------------------
+    
     # print("Histogram of letters in answer key")
     # histogram = count_letters(word_answer_list)
     # histogram = dict(sorted(histogram.items(), key=lambda item: item[1], reverse=True))
@@ -344,8 +348,9 @@ def main():
     # plt.show()
 
     # ------------------------------------------------------------------------------------------------
-    # Algorithm test words
+    # Algorithm test words - single pass through solver
     # ------------------------------------------------------------------------------------------------
+    
     # # No letter overlap
     # guess = "orate"
     # word_chosen = "biddy"
@@ -356,17 +361,18 @@ def main():
     # guess = "orate"
     # word_chosen = "tides"
     # # All types of matches
-    guess = "orate"
-    word_chosen = "trade"
-    next_guess(guess, word_chosen, word_list)
+    # guess = "orate"
+    # word_chosen = "trade"
+    # next_guess(guess, word_chosen, word_list)
     # # Too many inexact matching letters
     # guess = "ezzze"
     # word_chosen = "hoped"
     # next_guess(guess, word_chosen, word_list)
 
     # ------------------------------------------------------------------------------------------------
-    # Single pass through the solver
+    # Algorithm test - full solve
     # ------------------------------------------------------------------------------------------------
+    
     # guess = "orate"
     # word_chosen = "hoped"
     # numguesses = iterate_until_solved(guess, word_chosen, word_list)
@@ -392,19 +398,20 @@ def main():
     # ------------------------------------------------------------------------------------------------
     # Test seed word against a sample of the entire list
     # ------------------------------------------------------------------------------------------------
-    # shorter_word_list = random.sample(word_guess_list, 2000)
-    # new_word_list = shorter_word_list + word_answer_list
-    # guess = "orate"
-    # numguesses = list()
-    # words_per_step = list()
 
-    # for answerword in word_answer_list:
-    #     word_count_per_step = iterate_until_solved(guess, answerword, new_word_list)
-    #     words_per_step.append(word_count_per_step)
-    #     numguesses.append(len(word_count_per_step))
+    shorter_word_list = random.sample(word_guess_list, 2000)
+    new_word_list = shorter_word_list + word_answer_list
+    guess = "orate"
+    numguesses = list()
+    words_per_step = list()
 
-    # plot_words_per_step(words_per_step)
-    # plot_numguess(numguesses)
+    for answerword in word_answer_list:
+        word_count_per_step = iterate_until_solved(guess, answerword, new_word_list)
+        words_per_step.append(word_count_per_step)
+        numguesses.append(len(word_count_per_step))
+
+    plot_words_per_step(words_per_step)
+    plot_numguess(numguesses)
 
 if __name__ == "__main__":
     main()
