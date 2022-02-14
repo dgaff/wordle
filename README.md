@@ -11,7 +11,7 @@ I've been learning both Python and Data Science recently, and I was looking for 
 3. How many steps does it take before the large list of words (~13,000) get pared down to something small?
 4. Assuming the author of Wordle tried to pick well-known words, and assuming that most people don't know 13,000 five-letter words, what is a more realistic number of steps? Should an average person be able to solve every Wordle in 6 tries?
 
-Note that this tool isn't design to help you make your next guess. It's designed to run through many wordle rounds in order to do an analysis on the overall game.
+Note that this tool isn't designed to help you make your next guess. It's designed to run through many wordle rounds in order to do an analysis on the overall game.
 
 ## Caveats
 
