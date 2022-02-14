@@ -1,5 +1,7 @@
 # Wordle Analysis Tool
 
+<img src="wordle.jpeg" width="200px"></img>
+
 ## Intro
 
 I've been learning both Python and Data Science recently, and I was looking for a fun real-world exercise to apply some of what I've been learning. Given that everyone is addicted to Wordle, I thought I'd do some analysis on Wordle solutions. I had a few questions in mind:
