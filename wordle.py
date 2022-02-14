@@ -1,3 +1,6 @@
+# (c) Copyright 2022 Doug Gaff
+# All rights reserved
+
 from hashlib import new
 import random
 from collections import OrderedDict
