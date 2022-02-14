@@ -11,7 +11,7 @@ I've been learning both Python and Data Science recently, and I was looking for 
 3. How many steps does it take before the large list of words (~13,000) get pared down to something small?
 4. Assuming the author of Wordle tried to pick well-known words, and assuming that most people don't know 13,000 five-letter words, what is a more realistic number of steps? Should an average person be able to solve every Wordle in 6 tries?
 
-Note that this tool isn't design to help you make your next guess. It's designed to run through many wordle rounds in order to do an analysis on the overall game.
+Note that this tool isn't designed to help you make your next guess. It's designed to run through many wordle rounds in order to do an analysis on the overall game.
 
 ## Caveats
 
@@ -61,7 +61,7 @@ Taking that last question, what does the dictionary look like at each step? How 
 
 ## How much of a difference does a smaller dictionary make?
 
-But we said that the allowable guesses dictionary has a huge number of words that most people don't know. If you don't believe me, take a look at the allowed guesses file in this repo. I suspect you won't know many if not most of the words listed. 
+We said that the allowable guesses dictionary has a huge number of words that most people don't know. If you don't believe me, take a look at the allowed guesses file in this repo. I suspect you won't know many if not most of the words listed. 
 
 So let's run this again, but reduce the dictionary size to something that feels more manageable. The right way to do this would have been to go through the 13,000 words and pick ones that I thought were familiar. However, that's more work than I wanted to do, so instead I just took a random sample of the allowed guesses dictionary, figuring that this would be close enough statistically to get an answer to my question. I randomly picked 2000 words from the allowed words list and added in the 1315 answer words for a total of 4315 words. Again, I started with ORATE, since that's still the word from the answers with the highest letter usage.
 
@@ -81,8 +81,8 @@ As you can see, the mean shifted left, and the distribution got tighter, both in
 
 I have more questions, but not enough time. 
 
-1. If I did a manually reduction in the allowed guesses dictionary, would that tighten up the distribution even more?
+1. If I did a manual reduction in the allowed guesses dictionary, would that tighten up the distribution even more?
 2. What if ORATE is a good word statisitically, but not a good word practically? Is there a better starting word that drives down the solution list to a smaller set of possible words faster? I'm skeptical of this, but it's worth simulating.
-3. Similarly, is there a subset of words in guesses two and three that would more quickly reduce the allowed guesses dictionary. For example, if I could memory 100 words, would that virtually guarantee that I could solve the puzzle in six steps?
+3. Similarly, is there a subset of words in guesses two and three that would more quickly reduce the allowed guesses dictionary? For example, if I could memorize 100 words, would that virtually guarantee that I could solve the puzzle in six steps?
 
-There are probably other things I'll think of and simulate as a have time.
+There are probably other things I'll think of and simulate as I have time.
