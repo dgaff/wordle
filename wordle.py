@@ -402,14 +402,31 @@ def main():
     # Test seed word against a sample of the entire list
     # ------------------------------------------------------------------------------------------------
 
-    shorter_word_list = random.sample(word_guess_list, 2000)
-    new_word_list = shorter_word_list + word_answer_list
+    # shorter_word_list = random.sample(word_guess_list, 2000)
+    # new_word_list = shorter_word_list + word_answer_list
+    # guess = "orate"
+    # numguesses = list()
+    # words_per_step = list()
+
+    # for answerword in word_answer_list:
+    #     word_count_per_step = iterate_until_solved(guess, answerword, new_word_list)
+    #     words_per_step.append(word_count_per_step)
+    #     numguesses.append(len(word_count_per_step))
+
+    # plot_words_per_step(words_per_step)
+    # plot_numguess(numguesses)
+
+    # ------------------------------------------------------------------------------------------------
+    # Test seed word against just the answer key. Interestingly, this didn't produce much
+    # different results than the larger random sample of the dictionary list. 
+    # ------------------------------------------------------------------------------------------------
+
     guess = "orate"
     numguesses = list()
     words_per_step = list()
 
     for answerword in word_answer_list:
-        word_count_per_step = iterate_until_solved(guess, answerword, new_word_list)
+        word_count_per_step = iterate_until_solved(guess, answerword, word_answer_list)
         words_per_step.append(word_count_per_step)
         numguesses.append(len(word_count_per_step))
 
